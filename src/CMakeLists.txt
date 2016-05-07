@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
 project(myVector)
+add_definitions(-Wall -ansi -pthread -std=c++11 --coverage -Wall)
 set( mv_source ./myVector.cpp )
 add_library( myVector STATIC ${mv_source} )
