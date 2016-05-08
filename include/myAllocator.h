@@ -5,8 +5,8 @@ class myAllocator{
 	typedef T value_type;
 	typedef T& reference;
 	typedef T* pointer;
-	typedef const reference const_reference;
-	typedef const pointer const_pointer;
+	typedef const T& const_reference;
+	typedef const T* const_pointer;
 	typedef std::size_t size_type;
 	typedef int difference_type;
 public:
@@ -22,20 +22,9 @@ public:
 		::operator delete(ptr);
 	}
 
-	void construct(pointer item){
-		item = new value_type();
-	}
-
-	template<typename U, typename... ARGS>
-	void construct(U* item, ARGS*... args){
-		construct(item);
-		construct(args...);
-	}
-
-	void construct(pointer& item, size_type n){
-		for (size_type i = 0; i < n; i++){
-			item[i] = value_type();
-		}
+	template<class... Args>
+	void construct(pointer item, Args&&... args){
+		item = new((void *)item) T(args...);
 	}
 
 	void destroy(pointer item){

@@ -18,5 +18,8 @@ include_directories(./gtestInclude)
 
 add_executable(test1 test.cpp)
 target_link_libraries(test1 gtest gtest_main gmock gmock_main myVector)
+add_executable(test2 test2.cpp)
+target_link_libraries(test2 gtest gtest_main gmock gmock_main myVector)
 
 add_test(NAME Alloc_Test COMMAND test1)
+add_test(NAME Vector_Test COMMAND test2)
