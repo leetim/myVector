@@ -16,7 +16,7 @@ protected:
 	void TearDown()
 	{
 	}
-	typedef myVector<int> vec_int;
+	typedef myVector<int, myAllocator<int> > vec_int;
 	// typedef myVector<some_class> vec_some;
 	myVector<int> iv;
 	// myVector<some_class> sv;
@@ -27,6 +27,7 @@ TEST_F(VectorTest, vector_constructors_int){
 	vec_int a2(5);
 	vec_int a3 = {1, 2, 3, 4};
 	vec_int a4({1, 2, 3, 4});
+	// cout << 123 << endl;
 	vec_int a5(a4);
 	vec_int a6 = a4;
 	vec_int a7(a3.begin(), a3.end());

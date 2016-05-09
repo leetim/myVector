@@ -76,7 +76,8 @@ public:
 		reserved_memory = MAX_SIZE_START;
 	};
 
-	myVector(const myVector<value_type>& other){
+	// template <class U>
+	myVector(const myVector<value_type, Allocator>& other){
 		alloc = Allocator();
 		reserved_memory = other.reserved_memory;
 		first = alloc.allocate(reserved_memory);
@@ -84,7 +85,6 @@ public:
 		for (size_type i = 0; i < l; i++){
 			first[i] = other.first[i];
 		}
-
 	};
 
 	myVector(const std::initializer_list<value_type>& list){

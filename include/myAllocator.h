@@ -2,6 +2,7 @@
 
 template <class T>
 class myAllocator{
+public:
 	typedef T value_type;
 	typedef T& reference;
 	typedef T* pointer;
@@ -9,10 +10,10 @@ class myAllocator{
 	typedef const T* const_pointer;
 	typedef std::size_t size_type;
 	typedef int difference_type;
-public:
 
-	myAllocator(){};
-	myAllocator(const myAllocator<T>& other){};
+	myAllocator() throw(){};
+	myAllocator(const myAllocator<T>& other) throw(){};
+	~myAllocator() throw(){};
 
 	pointer allocate(size_type n){
 		return static_cast<pointer>(::operator new(n * sizeof(value_type)));
