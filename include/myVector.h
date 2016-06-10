@@ -261,63 +261,8 @@ public:
 		first = temp;
 	}
 
-	iterator insert(iterator pos, const T& value){
-		if (l + 1 > reserved_memory){
-			pointer temp = alloc.allocate(reserved_memory*2);
-			size_type n = pos - begin();
-			for (size_type i = 0; i < n; i++){
-				alloc.construct(&temp[i], first[i]);
-				alloc.destroy(&first[i]);
-			}
-			alloc.construct(&temp[n], value);
-			for (size_type i = n; i < l; i++){
-				alloc.construct(&temp[i + 1], first[i]);
-				alloc.destroy(&first[i]);
-			}
-			alloc.deallocate(first, reserved_memory);
-			reserved_memory *= 2;
-			first = temp;
-			l++;
-			return &temp[n];
-		}
-		for (iterator i = end() - 1; i >= pos; i--){
-			alloc.construct(i + 1, *i);
-			alloc.destroy(i);
-		}
-		alloc.construct(pos, value);
-		l++;
-		return pos;
-	}
-
 	iterator insert(iterator pos, size_type count, const T& value){
-		size_type new_reserved = reserved_memory;
-		while (l + count > new_reserved){
-			new_reserved *= 2;
-		}
-		if (l + count > reserved_memory){
-			pointer temp = alloc.allocate(new_reserved);
-			size_type n = pos - begin();
-			for (size_type i = 0; i < n; i++){
-				alloc.construct(&temp[i], first[i]);
-				alloc.destroy(&first[i]);
-			}
-			for (size_type i = 0; i < count; i++){
-				alloc.construct(&temp[n + i], value);
-			}
-			for (size_type i = n; i < l; i++){
-				alloc.construct(&temp[i + count], first[i]);
-				alloc.destroy(&first[i]);
-			}
-			alloc.deallocate(first, reserved_memory);
-			reserved_memory = new_reserved;
-			first = temp;
-			l += count;
-			return &temp[n];
-		}
-		for (iterator i = end() - 1; i >= pos; i--){
-			alloc.construct(i + count, *i);
-			alloc.destroy(i);
-		}
+		pos = make_space(pos, count);
 		for (size_type i = 0; i < count;i++){
 			alloc.construct(&pos[i], value);
 		}
@@ -325,37 +270,14 @@ public:
 		return pos;
 	}
 
+	iterator insert(iterator pos, const T& value){
+		return insert(pos, (size_t)1, value);
+	}
+
 	template<class InputIt>
 	iterator insert(iterator pos, InputIt _begin, InputIt _end){
 		size_type count = _end - _begin;
-		size_type new_reserved = reserved_memory;
-		while (l + count > new_reserved){
-			new_reserved *= 2;
-		}
-		if (l + count > reserved_memory){
-			pointer temp = alloc.allocate(new_reserved);
-			size_type n = pos - begin();
-			for (size_type i = 0; i < n; i++){
-				alloc.construct(&temp[i], first[i]);
-				alloc.destroy(&first[i]);
-			}
-			for (size_type i = 0; i < count; i++){
-				alloc.construct(&temp[n + i], _begin[i]);
-			}
-			for (size_type i = n; i < l; i++){
-				alloc.construct(&temp[i + count], first[i]);
-				alloc.destroy(&first[i]);
-			}
-			alloc.deallocate(first, reserved_memory);
-			reserved_memory = new_reserved;
-			first = temp;
-			l += count;
-			return &temp[n];
-		}
-		for (iterator i = end() - 1; i >= pos; i--){
-			alloc.construct(i + count, *i);
-			alloc.destroy(i);
-		}
+		pos = make_space(pos, count);
 		for (size_type i = 0; i < count;i++){
 			alloc.construct(&pos[i], _begin[i]);
 		}
@@ -364,51 +286,7 @@ public:
 	}
 
 	iterator insert(iterator pos, const std::initializer_list<T>& list){
-		size_type count = list.size();
-		size_type new_reserved = reserved_memory;
-		while (l + count > new_reserved){
-			new_reserved *= 2;
-		}
-		if (l + count > reserved_memory){
-			pointer temp = alloc.allocate(new_reserved);
-			size_type n = pos - begin();
-			for (size_type i = 0; i < n; i++){
-				alloc.construct(&temp[i], first[i]);
-				alloc.destroy(&first[i]);
-			}
-			for (size_type i = 0; i < count; i++){
-				alloc.construct(&temp[n + i], list.begin()[i]);
-			}
-			for (size_type i = n; i < l; i++){
-				alloc.construct(&temp[i + count], first[i]);
-				alloc.destroy(&first[i]);
-			}
-			alloc.deallocate(first, reserved_memory);
-			reserved_memory = new_reserved;
-			first = temp;
-			l += count;
-			return &temp[n];
-		}
-		for (iterator i = end() - 1; i >= pos; i--){
-			alloc.construct(i + count, *i);
-			alloc.destroy(i);
-		}
-		for (size_type i = 0; i < count;i++){
-			alloc.construct(&pos[i], list.begin()[i]);
-		}
-		l += count;
-		return pos;
-
-	}
-
-	iterator erase(iterator pos){
-		alloc.destroy(pos);
-		for (iterator i = pos + 1; i < end(); i++){
-			alloc.construct(i - 1, *i);
-			alloc.destroy(i);
-		}
-		l--;
-		return pos;
+		return insert(pos, list.begin(), list.end());
 	}
 
 	iterator erase(iterator _begin, iterator _end){
@@ -424,12 +302,8 @@ public:
 		return _begin;
 	}
 
-	void push_back(const T& value){
-		if (l + 1 > reserved_memory){
-			reserve(reserved_memory * 2);
-		}
-		alloc.construct(&first[l], value);
-		l++;
+	iterator erase(iterator pos){
+		return erase(pos, pos + 1);
 	}
 
 	template <class... Args>
@@ -439,6 +313,10 @@ public:
 		}
 		alloc.construct(&first[l], args...);
 		l++;		
+	}
+
+	void push_back(const T& value){
+		emplace_back(value);
 	}
 
 	// template <class... Args>
@@ -475,6 +353,34 @@ public:
 
 
 private:
+	iterator make_space(iterator pos, size_type count){
+		size_type new_reserved = reserved_memory;
+		while (l + count > new_reserved){
+			new_reserved *= 2;
+		}
+		if (l + count > reserved_memory){
+			pointer temp = alloc.allocate(new_reserved);
+			size_type n = pos - begin();
+			for (size_type i = 0; i < n; i++){
+				alloc.construct(&temp[i], first[i]);
+				alloc.destroy(&first[i]);
+			}
+			for (size_type i = n; i < l; i++){
+				alloc.construct(&temp[i + count], first[i]);
+				alloc.destroy(&first[i]);
+			}
+			alloc.deallocate(first, reserved_memory);
+			reserved_memory = new_reserved;
+			first = temp;
+			return &temp[n];
+		}
+		for (iterator i = end() - 1; i >= pos; i--){
+			alloc.construct(i + count, *i);
+			alloc.destroy(i);
+		}
+		return pos;
+	}
+
 	allocator_type alloc;
 	pointer first;
 	size_type l;
