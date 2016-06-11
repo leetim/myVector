@@ -8,7 +8,7 @@
 #include <sort.h>
 #include <vector>
 #include <ctime>
-#define K 3000000
+#define K 30000
 
 using namespace std;
 

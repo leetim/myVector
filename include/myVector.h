@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <utility>
 #include <iostream>
+#include <algorithm>
 #define MAX_SIZE_START 10
 
 template <class T, class Allocator = std::allocator<T> >
@@ -163,7 +164,7 @@ public:
 	void assign(InputIt _first, InputIt _last){
 		clear();
 		l = _last - _first;
-		reserved_memory = l * 2;
+		reserved_memory = (l*2 > (size_type)MAX_SIZE_START) ? l*2 : MAX_SIZE_START;
 		first = alloc.allocate(reserved_memory);
 		for (size_type i = 0; i < l; i++){
 			alloc.construct(&first[i], _first[i]);
@@ -195,9 +196,9 @@ public:
 		return first[pos];
 	}
 
-	// const_reference operator[](size_type pos) const{
-	// 	return first[pos];
-	// }
+	const_reference operator[](size_type pos) const{
+		return first[pos];
+	}
 
 	reference front(){
 		return first[0];
@@ -223,27 +224,27 @@ public:
 		return first + l;
 	}
 
-	// const_iterator cbegin(){
-	// 	return first;
-	// }
+	const_iterator cbegin() const{
+		return first;
+	}
 
-	// const_iterator cend(){
-	// 	return first + l;
-	// }
+	const_iterator cend() const{
+		return first + l;
+	}
 
-	Allocator get_allocator(){
+	Allocator get_allocator() const{
 		return alloc;
 	}
 
-	bool empty(){
+	bool empty() const{
 		return l == 0;
 	}
 
-	size_type size(){
+	size_type size() const{
 		return l;
 	}
 
-	size_type capacity(){
+	size_type capacity() const{
 		return reserved_memory;
 	}
 
@@ -312,7 +313,7 @@ public:
 			reserve(reserved_memory * 2);
 		}
 		alloc.construct(&first[l], args...);
-		l++;		
+		l++;
 	}
 
 	void push_back(const T& value){
@@ -335,7 +336,7 @@ public:
 
 	void pop_back(){
 		alloc.destroy(&back());
-		l--;		
+		l--;
 	}
 
 	void resize(size_type count, const T& value = T()){
@@ -354,11 +355,16 @@ public:
 
 private:
 	iterator make_space(iterator pos, size_type count){
+		// if (count == 0){
+		// 	return pos;
+		// }
 		size_type new_reserved = reserved_memory;
 		while (l + count > new_reserved){
+			// std::cout << l << " " << count << " " << new_reserved << std::endl;
 			new_reserved *= 2;
 		}
 		if (l + count > reserved_memory){
+			// std::cout << 1 << std::endl;
 			pointer temp = alloc.allocate(new_reserved);
 			size_type n = pos - begin();
 			for (size_type i = 0; i < n; i++){
@@ -374,6 +380,7 @@ private:
 			first = temp;
 			return &temp[n];
 		}
+		// std::cout << 2 << std::endl;
 		for (iterator i = end() - 1; i >= pos; i--){
 			alloc.construct(i + count, *i);
 			alloc.destroy(i);
@@ -386,4 +393,3 @@ private:
 	size_type l;
 	size_type reserved_memory;
 };
-
